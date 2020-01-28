@@ -170,7 +170,7 @@ ts_data.drop(['date_loan','account_id','date_loan_x'], axis=1, inplace=True)
 ts_data.columns=['loan_id', 'rate','applicants']
 ts_data.set_index('loan_id', inplace=True)
 
-loans = loans.join(ts_data)
+loans = loans.join(ts_data).drop_duplicates()
 
 # ### Compute aggregations and combine
 # We first aggregate the transaction data to loan-level.
@@ -181,16 +181,17 @@ def aggregate(data, time_window_max = 100, time_window_min = 0):
     trans_agg = trans_agg[(data.date_loan - data.date).dt.days > time_window_min]
     trans_agg['balance_start'] = trans_agg.balance - trans_agg.amount_trans
     trans_agg['transactions'] = 1
-    trans_agg['net_cdeposit'] = trans_agg.c_deposit * trans_agg.amount_trans                                 - trans_agg.c_withdr * trans_agg.amount_trans
-    trans_agg['net_bdeposit'] =  trans_agg.b_deposit * trans_agg.amount_trans                                 - trans_agg.b_withdr * trans_agg.amount_trans
+    trans_agg['net_cdeposit'] = trans_agg.c_deposit * trans_agg.amount_trans \
+                                - trans_agg.c_withdr * trans_agg.amount_trans
+    trans_agg['net_bdeposit'] =  trans_agg.b_deposit * trans_agg.amount_trans \
+                                - trans_agg.b_withdr * trans_agg.amount_trans
     trans_agg['age'] = (trans_loans.date_loan - trans_loans.date).dt.days
     trans_agg = trans_agg.groupby('loan_id').agg({
-        'balance':['min','mean','max'],
-        
+        'balance':['min','mean','max'], 
         'c_deposit':'sum',
         'c_withdr':'sum',
         'sanc':'max',
-        'rate': 'max',
+        'rate': ['min','mean','max'],
         'balance_start':lambda x: x.iloc[0],
         'transactions':'sum',
         'net_cdeposit':'sum',
