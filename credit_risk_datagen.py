@@ -9,13 +9,13 @@ import sys
 # ### Reading and merging the loan and account -related datasets
 # We merge the static datasets and explore proportional missingness in the full data.
 
-client = pd.read_csv('client.asc',sep=';')
-account = pd.read_csv('account.asc',sep=';')
-disp = pd.read_csv('disp.asc',sep=';')
-order = pd.read_csv('order.asc',sep=';')
-loan = pd.read_csv('loan.asc',sep=';')
-card = pd.read_csv('card.asc',sep=';')
-district = pd.read_csv('district.asc',sep=';')
+client = pd.read_csv('bk/data_berka/client.asc',sep=';')
+account = pd.read_csv('bk/data_berka/account.asc',sep=';')
+disp = pd.read_csv('bk/data_berka/disp.asc',sep=';')
+order = pd.read_csv('bk/data_berka/order.asc',sep=';')
+loan = pd.read_csv('bk/data_berka/loan.asc',sep=';')
+card = pd.read_csv('bk/data_berka/card.asc',sep=';')
+district = pd.read_csv('bk/data_berka/district.asc',sep=';')
 
 df = pd.merge(loan, account,on='account_id', suffixes=['_loan','_acnt'], how='outer')
 df = pd.merge(df, disp, on='account_id', how='outer')
@@ -105,7 +105,7 @@ loans.drop('A1', axis=1, inplace=True)
 
 
 # ### Read in and merge transaction data
-trans = pd.read_csv('trans.asc', sep=';')
+trans = pd.read_csv('bk/data_berka/trans.asc', sep=';')
 trans_loans = pd.merge(loan_dates, trans, on='account_id', suffixes=['', '_trans'], how='left')
 
 # Because we're interested in predicting bad loans, we should use transaction data from only prior to giving out the loan.
@@ -170,7 +170,8 @@ ts_data.drop(['date_loan','account_id','date_loan_x'], axis=1, inplace=True)
 ts_data.columns=['loan_id', 'rate','applicants']
 ts_data.set_index('loan_id', inplace=True)
 
-loans = loans.join(ts_data).drop_duplicates()
+
+loans = loans.join(ts_data)
 
 # ### Compute aggregations and combine
 # We first aggregate the transaction data to loan-level.
@@ -221,6 +222,6 @@ if __name__== "__main__":
     trans_agg2 = aggregate(trans_loans, min_time, 0)
     trans_agg = trans_agg.join(trans_agg2, rsuffix='_short')
     final = pd.merge(loans, trans_agg, left_index=True, right_index=True, suffixes=['','_trans'], how='left')
-
+    final = final[~final.index.duplicated(keep='first')]
     with open('loan_data','wb') as file:
         pickle.dump(final, file)
