@@ -154,12 +154,7 @@ trans_loans.columns = ['loan_id', 'date', 'date_loan', 'amount_trans', 'balance'
        'insur', 'b_deposit', 'sanc', 'hhold',
        'interest', 'c_deposit', 'c_withdr']
 
-trans_loans['month'] = trans_loans.date.dt.year * 12 + trans_loans.date.dt.month
-trans_monthly = trans_loans.groupby(['loan_id', 'month']).agg(['sum','mean','max','min']).fillna(0)
-trans_monthly.columns = ['_'.join(col).strip() for col in trans_monthly.columns.values]
-trans_monthly.reset_index(inplace=True)
-trans_monthly['loan_id'] = trans_monthly.loan_id.astype(int)
 
 
 with open('dfs_data_trans','wb') as file:
-    pickle.dump(trans_monthly, file)
+    pickle.dump(trans_loans, file)
